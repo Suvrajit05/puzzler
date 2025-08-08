@@ -14,19 +14,26 @@ const adminRoutes = require('./routes/admin');
 const gameRoutes = require('./routes/games');
 
 // Database connection
-mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 30000, // 30 seconds
-    connectTimeoutMS: 30000,
-    bufferCommands: false,
-    bufferMaxEntries: 0
-}).then(() => {
-    console.log('Connected to MongoDB Atlas successfully');
-}).catch(err => {
-    console.error('Database connection error:', err);
-    console.error('MongoDB URI:', process.env.MONGODB_URI ? 'Present' : 'Missing');
-});
+async function connectDB() {
+    try {
+        await mongoose.connect(process.env.MONGODB_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 30000, // 30 seconds
+            connectTimeoutMS: 30000,
+            bufferCommands: true // Enable buffering for better reliability
+        });
+        console.log('Connected to MongoDB Atlas successfully');
+        return true;
+    } catch (err) {
+        console.error('Database connection error:', err);
+        console.error('MongoDB URI:', process.env.MONGODB_URI ? 'Present' : 'Missing');
+        return false;
+    }
+}
+
+// Initialize database connection
+connectDB();
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -46,6 +53,17 @@ app.use(session({
 // View engine setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+// Database connection middleware
+app.use((req, res, next) => {
+    if (mongoose.connection.readyState !== 1) {
+        return res.status(503).render('error', { 
+            title: 'Service Unavailable',
+            message: 'Database connection is not ready. Please try again in a moment.'
+        });
+    }
+    next();
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {

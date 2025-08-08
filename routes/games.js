@@ -1,10 +1,22 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Riddle = require('../models/Riddle');
 const GameSession = require('../models/GameSession');
 
+// Database connection check middleware
+const checkDB = (req, res, next) => {
+    if (mongoose.connection.readyState !== 1) {
+        return res.status(503).json({ 
+            success: false, 
+            message: 'Database connection not ready. Please try again.' 
+        });
+    }
+    next();
+};
+
 // Puzzler Game
-router.get('/puzzler', async (req, res) => {
+router.get('/puzzler', checkDB, async (req, res) => {
     try {
         // Build query with difficulty filter
         let query = { 
@@ -60,7 +72,7 @@ router.get('/puzzler', async (req, res) => {
 });
 
 // Submit puzzler answer
-router.post('/puzzler/answer', async (req, res) => {
+router.post('/puzzler/answer', checkDB, async (req, res) => {
     try {
         const { riddleId, answer } = req.body;
         const riddle = await Riddle.findById(riddleId);
@@ -96,7 +108,7 @@ router.post('/puzzler/answer', async (req, res) => {
 });
 
 // Wrong Answer Only Game
-router.get('/wrong-answer-only', async (req, res) => {
+router.get('/wrong-answer-only', checkDB, async (req, res) => {
     try {
         // Build query with difficulty filter
         let query = { 
@@ -152,7 +164,7 @@ router.get('/wrong-answer-only', async (req, res) => {
 });
 
 // Submit wrong answer only answer
-router.post('/wrong-answer-only/answer', async (req, res) => {
+router.post('/wrong-answer-only/answer', checkDB, async (req, res) => {
     try {
         const { riddleId, answer } = req.body;
         const riddle = await Riddle.findById(riddleId);
@@ -211,7 +223,7 @@ router.post('/wrong-answer-only/answer', async (req, res) => {
 });
 
 // Get new riddle for current game
-router.get('/new-riddle/:gameType', async (req, res) => {
+router.get('/new-riddle/:gameType', checkDB, async (req, res) => {
     try {
         const gameType = req.params.gameType;
         const difficulty = req.query.difficulty;
