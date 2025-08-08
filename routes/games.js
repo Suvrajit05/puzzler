@@ -249,11 +249,16 @@ router.get('/new-riddle/:gameType', checkDB, async (req, res) => {
         }
         
         const randomRiddle = riddles[Math.floor(Math.random() * riddles.length)];
+        
+        // Ensure answer exists, provide fallback if not
+        const answer = randomRiddle.answer || 'No answer provided';
+        
         res.json({ 
             success: true, 
             riddle: {
                 _id: randomRiddle._id,
                 question: randomRiddle.question,
+                answer: answer,
                 difficulty: randomRiddle.difficulty,
                 category: randomRiddle.category,
                 hints: randomRiddle.hints,
