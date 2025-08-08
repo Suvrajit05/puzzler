@@ -16,11 +16,16 @@ const gameRoutes = require('./routes/games');
 // Database connection
 mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 30000, // 30 seconds
+    connectTimeoutMS: 30000,
+    bufferCommands: false,
+    bufferMaxEntries: 0
 }).then(() => {
-    console.log('Connected to MongoDB Atlas');
+    console.log('Connected to MongoDB Atlas successfully');
 }).catch(err => {
     console.error('Database connection error:', err);
+    console.error('MongoDB URI:', process.env.MONGODB_URI ? 'Present' : 'Missing');
 });
 
 // Middleware
@@ -41,6 +46,15 @@ app.use(session({
 // View engine setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        mongodb: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'
+    });
+});
 
 // Routes
 app.use('/', homeRoutes);
@@ -65,6 +79,8 @@ app.use((req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV}`);
+    console.log(`MongoDB URI configured: ${process.env.MONGODB_URI ? 'Yes' : 'No'}`);
 });
