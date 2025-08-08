@@ -29,18 +29,6 @@
         </div>
     </div>
 
-    <!-- Timer Info -->
-    <div class="row mb-4">
-        <div class="col-md-4 mx-auto">
-            <div class="card bg-success text-white text-center">
-                <div class="card-body">
-                    <h4 id="timer">2.5</h4>
-                    <p class="mb-0">Seconds Remaining</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Game Area -->
     <div class="row justify-content-center">
         <div class="col-lg-8">
@@ -127,65 +115,8 @@
 </div>
 
 <script>
-let timerInterval = null;
-let timeRemaining = 2.5;
-
-// Timer functions
-function startTimer() {
-    timeRemaining = 2.5;
-    updateTimerDisplay();
-    
-    timerInterval = setInterval(() => {
-        timeRemaining = Math.max(0, timeRemaining - 0.1);
-        updateTimerDisplay();
-        
-        if (timeRemaining <= 0) {
-            clearInterval(timerInterval);
-            autoShowAnswer();
-        }
-    }, 100); // Update every 100ms for smoother countdown
-}
-
-function stopTimer() {
-    if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-    }
-}
-
-function updateTimerDisplay() {
-    const timerElement = document.getElementById('timer');
-    timerElement.textContent = timeRemaining.toFixed(1);
-    
-    // Change color based on time remaining
-    const timerCard = timerElement.closest('.card');
-    if (timeRemaining <= 1) {
-        timerCard.className = 'card bg-danger text-white text-center';
-    } else if (timeRemaining <= 2) {
-        timerCard.className = 'card bg-warning text-white text-center';
-    } else {
-        timerCard.className = 'card bg-success text-white text-center';
-    }
-}
-
-function autoShowAnswer() {
-    const riddleCard = document.getElementById('riddleCard');
-    const answerArea = document.getElementById('answerArea');
-    
-    if (riddleCard.style.display !== 'none') {
-        riddleCard.style.display = 'none';
-        answerArea.style.display = 'block';
-    }
-}
-
-// Start timer when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    startTimer();
-});
-
 // Show Answer Button
 document.getElementById('showAnswerBtn').addEventListener('click', function() {
-    stopTimer();
     const riddleCard = document.getElementById('riddleCard');
     const answerArea = document.getElementById('answerArea');
     
@@ -263,9 +194,6 @@ async function loadNewRiddle() {
             // Reset UI
             document.getElementById('riddleCard').style.display = 'block';
             document.getElementById('answerArea').style.display = 'none';
-            
-            // Restart timer
-            startTimer();
             
         } else {
             alert('Error loading new riddle: ' + result.message);
