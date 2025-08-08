@@ -1,0 +1,97 @@
+<%- include('partials/header') %>
+
+<div class="hero-section">
+    <div class="container">
+        <div class="row align-items-center min-vh-75">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold text-primary mb-4">
+                    Welcome to <span class="text-warning">Puzzler23</span>
+                </h1>
+                <p class="lead mb-4">
+                    Interactive riddle presentation for college induction programs! 
+                    Perfect for engaging 100+ students in group activities.
+                </p>
+                
+                <div class="d-flex flex-column flex-sm-row gap-3">
+                    <a href="/games/puzzler" class="btn btn-primary btn-lg">
+                        <i class="fas fa-puzzle-piece me-2"></i>Riddle Game
+                    </a>
+                    <a href="/games/wrong-answer-only" class="btn btn-outline-warning btn-lg">
+                        <i class="fas fa-times-circle me-2"></i>Wrong Answer Only
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <div class="puzzle-animation">
+                    <i class="fas fa-puzzle-piece fa-10x text-primary opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-puzzle-piece fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Riddle Game</h5>
+                    <p class="card-text">Interactive riddle game for large groups. Students call out answers!</p>
+                    <a href="/games/puzzler" class="btn btn-primary">Start Game</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-times-circle fa-3x text-warning mb-3"></i>
+                    <h5 class="card-title">Wrong Answer Only</h5>
+                    <p class="card-text">Think outside the box! Get points for creative wrong answers. Avoid the correct ones!</p>
+                    <a href="/games/wrong-answer-only" class="btn btn-warning">Try It</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Group Engagement</h5>
+                    <p class="card-text">Perfect for large audiences. Presenter controls the flow while students participate.</p>
+                    <div class="mt-3">
+                        <small class="text-muted">Total Riddles: <%= totalRiddles %></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-light py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto text-center">
+                <h2 class="mb-4">How It Works</h2>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="step-number">1</div>
+                        <h5>Project on Screen</h5>
+                        <p>Display the riddles on a large screen or projector</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="step-number">2</div>
+                        <h5>Students Participate</h5>
+                        <p>Students call out their answers from the audience</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="step-number">3</div>
+                        <h5>Reveal & Continue</h5>
+                        <p>Presenter reveals answer and moves to next riddle</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,178 @@
+<%- include('../partials/header') %>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+            <i class="fas fa-<%= action === 'add' ? 'plus' : 'edit' %> me-2"></i>
+            <%= action === 'add' ? (formType === 'wrong-answer' ? 'Add Wrong Answer Game' : 'Add New Riddle') : 'Edit' %>
+        </h1>
+        <a href="/admin/dashboard" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <% if (typeof error !== 'undefined' && error) { %>
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i><%= error %>
+                        </div>
+                    <% } %>
+
+                    <form method="POST" action="<%= action === 'add' ? '/admin/riddles' : '/admin/riddles/' + riddle._id + '?_method=PUT' %>" enctype="multipart/form-data">
+                        <input type="hidden" id="formType" name="formType" value="<%= typeof formType !== 'undefined' ? formType : (riddle && riddle.imageUrl ? 'wrong-answer' : 'riddle') %>">
+                        
+                        <!-- Form Type Display -->
+                        <div class="mb-3">
+                            <div class="alert alert-<%= (typeof formType !== 'undefined' && formType === 'wrong-answer') || (riddle && riddle.imageUrl) ? 'warning' : 'primary' %>">
+                                <i class="fas fa-<%= (typeof formType !== 'undefined' && formType === 'wrong-answer') || (riddle && riddle.imageUrl) ? 'times-circle' : 'puzzle-piece' %> me-2"></i>
+                                <strong><%= (typeof formType !== 'undefined' && formType === 'wrong-answer') || (riddle && riddle.imageUrl) ? 'Wrong Answer Game:' : 'Riddle Game:' %></strong>
+                                <%= (typeof formType !== 'undefined' && formType === 'wrong-answer') || (riddle && riddle.imageUrl) ? 'Upload an image for students to guess about' : 'Create a text-based riddle with question and answer' %>
+                            </div>
+                        </div>
+
+                        <!-- Game Type Selection (hidden, auto-set based on form type) -->
+                        <input type="hidden" id="gameType" name="gameType" value="<%= (typeof formType !== 'undefined' && formType === 'wrong-answer') || (riddle && riddle.imageUrl) ? 'wrong-answer-only' : 'puzzler' %>">
+
+                        <!-- Conditional Form Content -->
+                        <% if ((typeof formType !== 'undefined' && formType === 'wrong-answer') || (riddle && riddle.imageUrl)) { %>
+                            <!-- Wrong Answer Game Form -->
+                            <div class="mb-3">
+                                <label for="riddleImage" class="form-label">Upload Image <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control" id="riddleImage" name="riddleImage" 
+                                       accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" <%= action === 'add' ? 'required' : '' %>>
+                                <div class="form-text">Upload an image for students to guess (max 5MB). Supported formats: JPEG, JPG, PNG, GIF, WebP</div>
+                                <% if (riddle && riddle.imageUrl) { %>
+                                    <div class="mt-2">
+                                        <p class="mb-1"><strong>Current Image:</strong></p>
+                                        <img src="<%= riddle.imageUrl %>" alt="Current riddle image" class="img-thumbnail" style="max-width: 200px;">
+                                    </div>
+                                <% } %>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="question" class="form-label">Description (Optional)</label>
+                                <textarea class="form-control" id="question" name="question" rows="2" 
+                                          placeholder="Optional description for the image..."><%= riddle ? riddle.question : '' %></textarea>
+                                <div class="form-text">Leave blank to use default "Guess what this image shows!"</div>
+                            </div>
+                        <% } else { %>
+                            <!-- Regular Riddle Form -->
+                            <div class="mb-3">
+                                <label for="question" class="form-label">Question/Riddle <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="question" name="question" rows="3" required 
+                                          placeholder="Enter your riddle question here..."><%= riddle ? riddle.question : '' %></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="answer" class="form-label">Answer <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="answer" name="answer" required 
+                                       placeholder="Enter the correct answer (case-insensitive)" 
+                                       value="<%= riddle ? riddle.answer : '' %>">
+                                <div class="form-text">Answers will be stored in lowercase for case-insensitive matching.</div>
+                            </div>
+                        <% } %>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="difficulty" class="form-label">Difficulty Level</label>
+                                    <select class="form-select" id="difficulty" name="difficulty">
+                                        <option value="easy" <%= riddle && riddle.difficulty === 'easy' ? 'selected' : '' %>>Easy</option>
+                                        <option value="medium" <%= !riddle || riddle.difficulty === 'medium' ? 'selected' : '' %>>Medium</option>
+                                        <option value="hard" <%= riddle && riddle.difficulty === 'hard' ? 'selected' : '' %>>Hard</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="category" class="form-label">Category</label>
+                                    <input type="text" class="form-control" id="category" name="category" 
+                                           placeholder="e.g., Math, Science, General, Logic..." 
+                                           value="<%= riddle ? riddle.category : 'general' %>">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="hints" class="form-label">Hints (Optional)</label>
+                            <textarea class="form-control" id="hints" name="hints" rows="3" 
+                                      placeholder="Enter hints, one per line..."><%= riddle && riddle.hints ? riddle.hints.join('\n') : '' %></textarea>
+                            <div class="form-text">Enter each hint on a separate line. These can be used to help players.</div>
+                        </div>
+
+                        <% if (action === 'edit') { %>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="isActive" name="isActive" 
+                                           <%= riddle && riddle.isActive ? 'checked' : '' %>>
+                                    <label class="form-check-label" for="isActive">
+                                        Active (visible to players)
+                                    </label>
+                                </div>
+                            </div>
+                        <% } %>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="/admin/dashboard" class="btn btn-outline-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-<%= action === 'add' ? 'success' : 'primary' %>">
+                                <i class="fas fa-<%= action === 'add' ? 'plus' : 'save' %> me-2"></i>
+                                <%= action === 'add' ? 'Add Riddle' : 'Update Riddle' %>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-info-circle me-2"></i>Tips</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-lightbulb text-warning me-2"></i>
+                            Make questions clear and unambiguous
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-target text-primary me-2"></i>
+                            Keep answers simple and specific
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-layer-group text-info me-2"></i>
+                            Use categories to organize riddles
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-chart-line text-success me-2"></i>
+                            Set appropriate difficulty levels
+                        </li>
+                        <li>
+                            <i class="fas fa-question-circle text-secondary me-2"></i>
+                            Add hints for challenging riddles
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <% if (action === 'add') { %>
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6><i class="fas fa-preview me-2"></i>Example Riddle</h6>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Question:</strong> I have keys but no locks. I have space but no room. You can enter but not go outside. What am I?</p>
+                        <p><strong>Answer:</strong> keyboard</p>
+                        <p><strong>Difficulty:</strong> Medium</p>
+                        <p><strong>Category:</strong> Technology</p>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

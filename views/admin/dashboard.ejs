@@ -1,0 +1,172 @@
+<%- include('../partials/header') %>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard</h1>
+        <div>
+            <div class="btn-group me-2" role="group">
+                <a href="/admin/riddles/new?type=riddle" class="btn btn-success">
+                    <i class="fas fa-puzzle-piece me-2"></i>Add Riddle
+                </a>
+                <a href="/admin/riddles/new?type=wrong-answer" class="btn btn-warning">
+                    <i class="fas fa-times-circle me-2"></i>Add Wrong Answer Game
+                </a>
+            </div>
+            <form method="POST" action="/admin/logout" class="d-inline">
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>Total Riddles</h5>
+                            <h2><%= totalRiddles %></h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-puzzle-piece fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>Active Riddles</h5>
+                            <h2><%= activeRiddles %></h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>Inactive Riddles</h5>
+                            <h2><%= totalRiddles - activeRiddles %></h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-pause-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Riddles Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="fas fa-list me-2"></i>All Riddles</h5>
+        </div>
+        <div class="card-body">
+            <% if (riddles.length === 0) { %>
+                <div class="text-center py-4">
+                    <i class="fas fa-puzzle-piece fa-3x text-muted mb-3"></i>
+                    <h5>No riddles found</h5>
+                    <p class="text-muted">Start by adding your first riddle!</p>
+                    <a href="/admin/riddles/new" class="btn btn-success">
+                        <i class="fas fa-plus me-2"></i>Add First Riddle
+                    </a>
+                </div>
+            <% } else { %>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Question</th>
+                                <th>Answer</th>
+                                <th>Difficulty</th>
+                                <th>Category</th>
+                                <th>Game Type</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% riddles.forEach(riddle => { %>
+                                <tr>
+                                    <td>
+                                        <% if (riddle.imageUrl) { %>
+                                            <div class="d-flex align-items-center">
+                                                <img src="<%= riddle.imageUrl %>" alt="Riddle image" class="img-thumbnail me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                                <div class="question-preview">
+                                                    <i class="fas fa-image text-info me-1"></i>
+                                                    <%= riddle.question || 'Image riddle' %>
+                                                </div>
+                                            </div>
+                                        <% } else { %>
+                                            <div class="question-preview">
+                                                <%= riddle.question.length > 50 ? riddle.question.substring(0, 50) + '...' : riddle.question %>
+                                            </div>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <% if (riddle.answer) { %>
+                                            <code><%= riddle.answer %></code>
+                                        <% } else { %>
+                                            <span class="text-muted"><i>Image-based (no answer)</i></span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-<%= riddle.difficulty === 'easy' ? 'success' : riddle.difficulty === 'medium' ? 'warning' : 'danger' %>">
+                                            <%= riddle.difficulty %>
+                                        </span>
+                                    </td>
+                                    <td><%= riddle.category %></td>
+                                    <td>
+                                        <% 
+                                        let gameTypeColor = 'secondary';
+                                        let gameTypeText = riddle.gameType || 'both';
+                                        if (gameTypeText === 'puzzler') gameTypeColor = 'primary';
+                                        else if (gameTypeText === 'wrong-answer-only') gameTypeColor = 'warning';
+                                        else if (gameTypeText === 'both') gameTypeColor = 'info';
+                                        %>
+                                        <span class="badge bg-<%= gameTypeColor %>">
+                                            <%= gameTypeText %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-<%= riddle.isActive ? 'success' : 'secondary' %>">
+                                            <%= riddle.isActive ? 'Active' : 'Inactive' %>
+                                        </span>
+                                    </td>
+                                    <td><%= new Date(riddle.createdAt).toLocaleDateString() %></td>
+                                    <td>
+                                        <a href="/admin/riddles/<%= riddle._id %>/edit" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form method="POST" action="/admin/riddles/<%= riddle._id %>?_method=DELETE" class="d-inline" 
+                                              onsubmit="return confirm('Are you sure you want to delete this riddle?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

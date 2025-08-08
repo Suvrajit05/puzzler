@@ -1,0 +1,315 @@
+<%- include('../partials/header') %>
+
+<div class="container py-4">
+    <div class="game-header text-center mb-4">
+        <h1><i class="fas fa-times-circle me-2 text-warning"></i>Wrong Answer Only</h1>
+        <p class="lead">Get points for wrong answers! Avoid being correct!</p>
+        
+        <!-- Difficulty Filter -->
+        <div class="mb-3">
+            <h6 class="text-muted mb-2">Difficulty Level:</h6>
+            <div class="btn-group" role="group" aria-label="Difficulty filter">
+                <input type="radio" class="btn-check" name="difficulty" id="all" value="all" <%= (!difficulty || difficulty === 'all') ? 'checked' : '' %>>
+                <label class="btn btn-outline-secondary btn-sm" for="all">All Levels</label>
+                
+                <input type="radio" class="btn-check" name="difficulty" id="easy" value="easy" <%= (difficulty === 'easy') ? 'checked' : '' %>>
+                <label class="btn btn-outline-success btn-sm" for="easy">Easy</label>
+                
+                <input type="radio" class="btn-check" name="difficulty" id="medium" value="medium" <%= (difficulty === 'medium') ? 'checked' : '' %>>
+                <label class="btn btn-outline-warning btn-sm" for="medium">Medium</label>
+                
+                <input type="radio" class="btn-check" name="difficulty" id="hard" value="hard" <%= (difficulty === 'hard') ? 'checked' : '' %>>
+                <label class="btn btn-outline-danger btn-sm" for="hard">Hard</label>
+            </div>
+        </div>
+        
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Game Rule:</strong> You get points for WRONG answers. Getting it right gives you no points!
+        </div>
+    </div>
+
+    <!-- Game Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-warning text-white text-center">
+                <div class="card-body">
+                    <h4 id="score"><%= session ? session.score : 0 %></h4>
+                    <p class="mb-0">Wrong Answers</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white text-center">
+                <div class="card-body">
+                    <h4 id="questionsAnswered"><%= session ? session.questionsAnswered : 0 %></h4>
+                    <p class="mb-0">Attempted</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white text-center">
+                <div class="card-body">
+                    <h4 id="correctCount">
+                        <%= session ? (session.questionsAnswered - session.score) : 0 %>
+                    </h4>
+                    <p class="mb-0">Correct (Oops!)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white text-center">
+                <div class="card-body">
+                    <h4><%= riddle.difficulty %></h4>
+                    <p class="mb-0">Difficulty</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Area -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-times-circle me-2"></i>
+                        Riddle #<span id="riddleNumber"><%= (session ? session.questionsAnswered : 0) + 1 %></span>
+                        <span class="badge bg-dark text-light ms-2"><%= riddle.category %></span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="riddleCard">
+                        <!-- Display image if available, otherwise show text question -->
+                        <% if (riddle.imageUrl) { %>
+                            <div class="text-center mb-4">
+                                <img src="<%= riddle.imageUrl %>" alt="Riddle image" class="img-fluid rounded shadow" style="max-width: 100%; max-height: 400px;">
+                            </div>
+                            <h4 class="card-title text-center mb-4" id="riddleQuestion">
+                                <%= riddle.question || 'What is shown in this image?' %>
+                            </h4>
+                        <% } else { %>
+                            <h4 class="card-title mb-4" id="riddleQuestion"><%= riddle.question %></h4>
+                        <% } %>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Remember:</strong> <% if (riddle.imageUrl) { %>Look at the image and try to give a wrong answer about what you see!<% } else { %>Try to give a wrong answer to earn points!<% } %>
+                        </div>
+                        
+                        <form id="answerForm">
+                            <input type="hidden" id="riddleId" value="<%= riddle._id %>">
+                            <input type="hidden" id="hasImage" value="<%= riddle.imageUrl ? 'true' : 'false' %>">
+                            <div class="mb-3">
+                                <label for="answer" class="form-label">Your (Hopefully Wrong) Answer:</label>
+                                <input type="text" class="form-control form-control-lg" id="answer" 
+                                       placeholder="<%= riddle.imageUrl ? 'What do you think this image shows? (Try to be wrong!)' : 'Type a creative wrong answer here...' %>" 
+                                       autocomplete="off" required>
+                            </div>
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                                <button type="submit" class="btn btn-warning btn-lg me-md-2" id="submitBtn">
+                                    <i class="fas fa-times me-2"></i>Submit Wrong Answer
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-lg" id="skipBtn">
+                                    <i class="fas fa-forward me-2"></i>Skip
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Result Area -->
+                    <div id="resultArea" class="mt-4" style="display: none;">
+                        <div id="resultMessage" class="alert"></div>
+                        <button type="button" class="btn btn-success btn-lg" id="nextBtn">
+                            <i class="fas fa-arrow-right me-2"></i>Next Riddle
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strategy Tips -->
+            <div class="card mt-3 border-warning">
+                <div class="card-header bg-light">
+                    <h6><i class="fas fa-lightbulb me-2 text-warning"></i>Strategy Tips</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li><i class="fas fa-star text-warning me-2"></i>Be creative with your wrong answers</li>
+                        <li><i class="fas fa-star text-warning me-2"></i>Think of funny or unexpected responses</li>
+                        <li><i class="fas fa-star text-warning me-2"></i>Avoid obvious correct answers</li>
+                        <li><i class="fas fa-star text-warning me-2"></i>Have fun and don't overthink it!</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Game Controls -->
+            <div class="card mt-3">
+                <div class="card-body text-center">
+                    <button type="button" class="btn btn-outline-danger me-2" id="resetGameBtn">
+                        <i class="fas fa-redo me-2"></i>Reset Game
+                    </button>
+                    <a href="/" class="btn btn-outline-secondary">
+                        <i class="fas fa-home me-2"></i>Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('answerForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const riddleId = document.getElementById('riddleId').value;
+    const answer = document.getElementById('answer').value.trim();
+    
+    if (!answer) return;
+    
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Checking...';
+    
+    try {
+        const response = await fetch('/games/wrong-answer-only/answer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ riddleId, answer })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            displayResult(result);
+            updateStats(result);
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        alert('Error submitting answer. Please try again.');
+    }
+    
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-times me-2"></i>Submit Wrong Answer';
+});
+
+function displayResult(result) {
+    const resultArea = document.getElementById('resultArea');
+    const resultMessage = document.getElementById('resultMessage');
+    const riddleCard = document.getElementById('riddleCard');
+    
+    riddleCard.style.display = 'none';
+    resultArea.style.display = 'block';
+    
+    if (result.isWin) {
+        resultMessage.className = 'alert alert-success';
+        resultMessage.innerHTML = '<i class="fas fa-check-circle me-2"></i><strong>Perfect!</strong> ' + result.message;
+    } else if (result.isCorrectAnswer) {
+        resultMessage.className = 'alert alert-danger';
+        resultMessage.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i><strong>Oh no!</strong> ' + result.message;
+    } else {
+        resultMessage.className = 'alert alert-warning';
+        resultMessage.innerHTML = '<i class="fas fa-question-circle me-2"></i>' + result.message;
+    }
+    
+    // Always show the correct answer for reference (only for text riddles)
+    const hasImage = document.getElementById('hasImage').value === 'true';
+    if (!hasImage && result.correctAnswer) {
+        resultMessage.innerHTML += `<br><small>The correct answer was: <strong>${result.correctAnswer}</strong></small>`;
+    }
+}
+
+function updateStats(result) {
+    document.getElementById('score').textContent = result.score;
+    document.getElementById('questionsAnswered').textContent = result.questionsAnswered;
+    document.getElementById('correctCount').textContent = result.questionsAnswered - result.score;
+}
+
+document.getElementById('nextBtn').addEventListener('click', loadNewRiddle);
+document.getElementById('skipBtn').addEventListener('click', loadNewRiddle);
+
+// Difficulty filter handling
+document.addEventListener('DOMContentLoaded', function() {
+    const difficultyRadios = document.querySelectorAll('input[name="difficulty"]');
+    
+    difficultyRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            const selectedDifficulty = this.value;
+            // Reload page with new difficulty
+            const url = selectedDifficulty === 'all' ? '/games/wrong-answer-only' : `/games/wrong-answer-only?difficulty=${selectedDifficulty}`;
+            window.location.href = url;
+        });
+    });
+});
+
+async function loadNewRiddle() {
+    try {
+        // Get current difficulty from session or use 'all' as default
+        const difficulty = '<%= typeof difficulty !== "undefined" ? difficulty : "all" %>';
+        const url = difficulty === 'all' ? '/games/new-riddle/wrong-answer-only' : `/games/new-riddle/wrong-answer-only?difficulty=${difficulty}`;
+        
+        const response = await fetch(url);
+        const result = await response.json();
+        
+        if (result.success) {
+            document.getElementById('riddleId').value = result.riddle._id;
+            
+            // Update riddle display based on whether it has an image
+            const riddleQuestion = document.getElementById('riddleQuestion');
+            const answerInput = document.getElementById('answer');
+            const hasImageInput = document.getElementById('hasImage');
+            
+            if (result.riddle.imageUrl) {
+                // Update for image riddle
+                hasImageInput.value = 'true';
+                riddleQuestion.innerHTML = `
+                    <div class="text-center mb-4">
+                        <img src="${result.riddle.imageUrl}" alt="Riddle image" class="img-fluid rounded shadow" style="max-width: 100%; max-height: 400px;">
+                    </div>
+                    ${result.riddle.question || 'What is shown in this image?'}
+                `;
+                answerInput.placeholder = 'What do you think this image shows? (Try to be wrong!)';
+                
+                // Update the info alert
+                const infoAlert = document.querySelector('.alert-info');
+                infoAlert.innerHTML = '<i class="fas fa-info-circle me-2"></i><strong>Remember:</strong> Look at the image and try to give a wrong answer about what you see!';
+            } else {
+                // Update for text riddle
+                hasImageInput.value = 'false';
+                riddleQuestion.textContent = result.riddle.question;
+                answerInput.placeholder = 'Type a creative wrong answer here...';
+                
+                // Update the info alert
+                const infoAlert = document.querySelector('.alert-info');
+                infoAlert.innerHTML = '<i class="fas fa-info-circle me-2"></i><strong>Remember:</strong> Try to give a wrong answer to earn points!';
+            }
+            
+            answerInput.value = '';
+            document.getElementById('riddleNumber').textContent = parseInt(document.getElementById('questionsAnswered').textContent) + 1;
+            
+            // Reset UI
+            document.getElementById('riddleCard').style.display = 'block';
+            document.getElementById('resultArea').style.display = 'none';
+            
+            answerInput.focus();
+        } else {
+            alert('Error loading new riddle: ' + result.message);
+        }
+    } catch (error) {
+        alert('Error loading new riddle. Please refresh the page.');
+    }
+}
+
+document.getElementById('resetGameBtn').addEventListener('click', function() {
+    if (confirm('Are you sure you want to reset your game? This will clear your score.')) {
+        fetch('/games/reset/wrong-answer-only', { method: 'POST' })
+            .then(() => location.reload());
+    }
+});
+
+// Focus on answer input
+document.getElementById('answer').focus();
+</script>
+
+<%- include('../partials/footer') %>

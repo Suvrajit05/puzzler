@@ -1,0 +1,322 @@
+<%- include('../partials/header') %>
+
+<div class="container py-4 presentation-mode">
+    <div class="game-header text-center mb-4">
+        <h1><i class="fas fa-puzzle-piece me-2 text-primary"></i>Riddle Game</h1>
+        <p class="lead">Perfect for engaging 100+ students in college induction programs!</p>
+        
+        <!-- Difficulty Filter -->
+        <div class="mb-3">
+            <h6 class="text-muted mb-2">Difficulty Level:</h6>
+            <div class="btn-group" role="group" aria-label="Difficulty filter">
+                <input type="radio" class="btn-check" name="difficulty" id="all" value="all" <%= (!difficulty || difficulty === 'all') ? 'checked' : '' %>>
+                <label class="btn btn-outline-secondary btn-sm" for="all">All Levels</label>
+                
+                <input type="radio" class="btn-check" name="difficulty" id="easy" value="easy" <%= (difficulty === 'easy') ? 'checked' : '' %>>
+                <label class="btn btn-outline-success btn-sm" for="easy">Easy</label>
+                
+                <input type="radio" class="btn-check" name="difficulty" id="medium" value="medium" <%= (difficulty === 'medium') ? 'checked' : '' %>>
+                <label class="btn btn-outline-warning btn-sm" for="medium">Medium</label>
+                
+                <input type="radio" class="btn-check" name="difficulty" id="hard" value="hard" <%= (difficulty === 'hard') ? 'checked' : '' %>>
+                <label class="btn btn-outline-danger btn-sm" for="hard">Hard</label>
+            </div>
+        </div>
+        
+        <div class="alert alert-warning alert-permanent">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Game Mode:</strong> Display on screen, students call out answers, use keyboard shortcuts for control
+        </div>
+    </div>
+
+    <!-- Presentation Info -->
+    <div class="row mb-4">
+        <div class="col-md-6 mx-auto">
+            <div class="card bg-primary text-white text-center">
+                <div class="card-body">
+                    <h4 id="riddleCounter">Riddle #<%= (session ? session.questionsAnswered : 0) + 1 %></h4>
+                    <p class="mb-0">Interactive Session</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Area -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-puzzle-piece me-2"></i>
+                        Current Riddle
+                        <span class="badge bg-light text-dark ms-2"><%= riddle.category %></span>
+                        <span class="badge bg-warning text-dark ms-2"><%= riddle.difficulty %></span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="riddleCard">
+                        <h2 class="card-title mb-4 text-center" id="riddleQuestion" style="font-size: 2.5rem; line-height: 1.3;">
+                            <%= riddle.question %>
+                        </h2>
+                        
+                        <div class="alert alert-info alert-permanent text-center">
+                            <h5><i class="fas fa-microphone me-2"></i>Students, call out your answers!</h5>
+                            <p class="mb-0">Presenter will reveal the answer when ready</p>
+                        </div>
+                        
+                        <div class="d-grid gap-3 d-md-flex justify-content-center mt-4">
+                            <button type="button" class="btn btn-success btn-lg px-5" id="revealBtn">
+                                <i class="fas fa-eye me-2"></i>Reveal Answer
+                            </button>
+                            <button type="button" class="btn btn-primary btn-lg px-5" id="nextRiddleBtn">
+                                <i class="fas fa-forward me-2"></i>Next Riddle
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Answer Reveal Area -->
+                    <div id="answerArea" class="mt-4 text-center" style="display: none;">
+                        <div class="alert alert-success alert-permanent answer-reveal">
+                            <h3><i class="fas fa-lightbulb me-2"></i>The Answer Is:</h3>
+                            <h1 id="correctAnswer" style="font-size: 3rem; font-weight: bold; text-transform: uppercase; color: #155724; margin: 20px 0;">
+                                <%= riddle.answer.toUpperCase() %>
+                            </h1>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-lg px-5" id="continueBtn">
+                            <i class="fas fa-arrow-right me-2"></i>Continue to Next Riddle
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hints Card -->
+            <% if (riddle.hints && riddle.hints.length > 0) { %>
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6><i class="fas fa-lightbulb me-2"></i>Hints Available</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="hintsContainer" data-total-hints="<%= riddle.hints.length %>">
+                            <% riddle.hints.forEach((hint, index) => { %>
+                                <div class="hint-item mb-2" style="display: none;">
+                                    <span class="badge bg-secondary me-2">Hint <%= index + 1 %></span>
+                                    <%= hint %>
+                                </div>
+                            <% }); %>
+                        </div>
+                        <button type="button" class="btn btn-outline-warning btn-sm" id="showHintBtn">
+                            <i class="fas fa-lightbulb me-2"></i>Show Hint
+                        </button>
+                    </div>
+                </div>
+            <% } %>
+
+            <!-- Game Controls -->
+            <div class="card mt-3">
+                <div class="card-body text-center">
+                    <button type="button" class="btn btn-outline-danger me-2" id="resetGameBtn">
+                        <i class="fas fa-redo me-2"></i>Reset Session
+                    </button>
+                    <a href="/" class="btn btn-outline-secondary">
+                        <i class="fas fa-home me-2"></i>Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentHintIndex = 0;
+let currentRiddleNumber = 1;
+const hintsContainer = document.getElementById('hintsContainer');
+const totalHints = hintsContainer ? parseInt(hintsContainer.getAttribute('data-total-hints')) || 0 : 0;
+
+// Reveal Answer Button
+document.getElementById('revealBtn').addEventListener('click', function() {
+    console.log('Reveal button clicked'); // Debug log
+    const riddleCard = document.getElementById('riddleCard');
+    const answerArea = document.getElementById('answerArea');
+    
+    if (riddleCard && answerArea) {
+        riddleCard.style.display = 'none';
+        answerArea.style.display = 'block';
+        console.log('Answer revealed'); // Debug log
+    } else {
+        console.error('riddleCard or answerArea not found');
+    }
+});
+
+// Next Riddle Buttons
+document.getElementById('nextRiddleBtn').addEventListener('click', loadNewRiddle);
+document.getElementById('continueBtn').addEventListener('click', loadNewRiddle);
+
+// Difficulty filter handling
+document.addEventListener('DOMContentLoaded', function() {
+    const difficultyRadios = document.querySelectorAll('input[name="difficulty"]');
+    
+    difficultyRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            const selectedDifficulty = this.value;
+            // Reload page with new difficulty
+            const url = selectedDifficulty === 'all' ? '/games/puzzler' : `/games/puzzler?difficulty=${selectedDifficulty}`;
+            window.location.href = url;
+        });
+    });
+});
+
+async function loadNewRiddle() {
+    try {
+        // Get current difficulty from session or use 'all' as default
+        const difficulty = '<%= typeof difficulty !== "undefined" ? difficulty : "all" %>';
+        const url = difficulty === 'all' ? '/games/new-riddle/puzzler' : `/games/new-riddle/puzzler?difficulty=${difficulty}`;
+        
+        const response = await fetch(url);
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log('New riddle loaded:', result.riddle); // Debug log
+            
+            // Update riddle content
+            document.getElementById('riddleQuestion').textContent = result.riddle.question;
+            
+            // Update category and difficulty badges
+            const header = document.querySelector('.card-header h5');
+            header.innerHTML = `
+                <i class="fas fa-puzzle-piece me-2"></i>
+                Current Riddle
+                <span class="badge bg-light text-dark ms-2">${result.riddle.category}</span>
+                <span class="badge bg-warning text-dark ms-2">${result.riddle.difficulty}</span>
+            `;
+            
+            // Update answer
+            const correctAnswerElement = document.getElementById('correctAnswer');
+            if (correctAnswerElement) {
+                correctAnswerElement.textContent = result.riddle.answer.toUpperCase();
+                console.log('Answer updated to:', result.riddle.answer.toUpperCase()); // Debug log
+            }
+            
+            // Update counter
+            currentRiddleNumber++;
+            document.getElementById('riddleCounter').innerHTML = `Riddle #${currentRiddleNumber}<br><small>Interactive Session</small>`;
+            
+            // Reset UI
+            document.getElementById('riddleCard').style.display = 'block';
+            document.getElementById('answerArea').style.display = 'none';
+            currentHintIndex = 0;
+            
+            // Update hints if available
+            updateHintsSection(result.riddle.hints);
+            
+        } else {
+            alert('Error loading new riddle: ' + result.message);
+        }
+    } catch (error) {
+        console.error('Error loading new riddle:', error);
+        alert('Error loading new riddle. Please refresh the page.');
+    }
+}
+
+function updateHintsSection(hints) {
+    const hintsCard = document.querySelector('.card.mt-3');
+    if (hints && hints.length > 0) {
+        if (hintsCard) {
+            // Update existing hints
+            const hintsContainer = document.getElementById('hintsContainer');
+            hintsContainer.innerHTML = '';
+            hints.forEach((hint, index) => {
+                const hintDiv = document.createElement('div');
+                hintDiv.className = 'hint-item mb-2';
+                hintDiv.style.display = 'none';
+                hintDiv.innerHTML = `
+                    <span class="badge bg-secondary me-2">Hint ${index + 1}</span>
+                    ${hint}
+                `;
+                hintsContainer.appendChild(hintDiv);
+            });
+            hintsContainer.setAttribute('data-total-hints', hints.length);
+            hintsCard.style.display = 'block';
+        }
+    } else {
+        if (hintsCard) {
+            hintsCard.style.display = 'none';
+        }
+    }
+    
+    // Reset hint button
+    const showHintBtn = document.getElementById('showHintBtn');
+    if (showHintBtn) {
+        showHintBtn.style.display = 'block';
+    }
+}
+
+// Show hints functionality
+document.getElementById('showHintBtn')?.addEventListener('click', function() {
+    const hintsContainer = document.getElementById('hintsContainer');
+    const totalHints = parseInt(hintsContainer.getAttribute('data-total-hints')) || 0;
+    
+    if (currentHintIndex < totalHints) {
+        document.querySelectorAll('.hint-item')[currentHintIndex].style.display = 'block';
+        currentHintIndex++;
+        
+        if (currentHintIndex >= totalHints) {
+            this.style.display = 'none';
+        }
+    }
+});
+
+document.getElementById('resetGameBtn').addEventListener('click', function() {
+    if (confirm('Are you sure you want to reset the session? This will start from the first riddle.')) {
+        fetch('/games/reset/puzzler', { method: 'POST' })
+            .then(() => location.reload());
+    }
+});
+
+// Add presentation instructions
+const instructionsAlert = document.createElement('div');
+instructionsAlert.className = 'alert alert-info alert-permanent mt-3';
+instructionsAlert.innerHTML = `
+    <h6><i class="fas fa-keyboard me-2"></i>Presenter Controls:</h6>
+    <small>
+        <strong>Spacebar:</strong> Reveal Answer | 
+        <strong>Enter:</strong> Next Riddle | 
+        <strong>H:</strong> Show Hint |
+        <strong>R:</strong> Reset Session
+    </small>
+`;
+document.querySelector('.col-lg-8').appendChild(instructionsAlert);
+
+// Enhanced keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Prevent default for our shortcuts
+    if (['Space', 'Enter', 'KeyH', 'KeyR'].includes(e.code)) {
+        e.preventDefault();
+    }
+    
+    // Space bar to reveal answer
+    if (e.code === 'Space' && document.getElementById('riddleCard').style.display !== 'none') {
+        document.getElementById('revealBtn').click();
+    }
+    
+    // Enter to go to next riddle
+    if (e.code === 'Enter') {
+        if (document.getElementById('answerArea').style.display !== 'none') {
+            document.getElementById('continueBtn').click();
+        } else {
+            document.getElementById('nextRiddleBtn').click();
+        }
+    }
+    
+    // 'H' key to show hint
+    if (e.code === 'KeyH' && document.getElementById('showHintBtn') && document.getElementById('showHintBtn').style.display !== 'none') {
+        document.getElementById('showHintBtn').click();
+    }
+    
+    // 'R' key to reset session
+    if (e.code === 'KeyR') {
+        document.getElementById('resetGameBtn').click();
+    }
+});
+</script>
+
+<%- include('../partials/footer') %>
