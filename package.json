@@ -9,6 +9,10 @@
     "populate": "node populate-db.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
   "keywords": [
     "puzzler",
     "riddles",
