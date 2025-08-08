@@ -3,7 +3,7 @@
 <div class="container py-4 presentation-mode">
     <div class="game-header text-center mb-4">
         <h1><i class="fas fa-puzzle-piece me-2 text-primary"></i>Riddle Game</h1>
-        <p class="lead">Perfect for engaging 100+ students in college induction programs!</p>
+        <p class="lead"></p>
         
         <!-- Difficulty Filter -->
         <div class="mb-3">
@@ -23,19 +23,23 @@
             </div>
         </div>
         
-        <div class="alert alert-warning alert-permanent">
-            <i class="fas fa-info-circle me-2"></i>
-            <strong>Game Mode:</strong> Display on screen, students call out answers, use keyboard shortcuts for control
-        </div>
     </div>
 
     <!-- Presentation Info -->
     <div class="row mb-4">
-        <div class="col-md-6 mx-auto">
+        <div class="col-md-4 mx-auto">
             <div class="card bg-primary text-white text-center">
                 <div class="card-body">
                     <h4 id="riddleCounter">Riddle #<%= (session ? session.questionsAnswered : 0) + 1 %></h4>
                     <p class="mb-0">Interactive Session</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mx-auto">
+            <div class="card bg-success text-white text-center">
+                <div class="card-body">
+                    <h4 id="timer">10</h4>
+                    <p class="mb-0">Seconds Remaining</p>
                 </div>
             </div>
         </div>
@@ -61,7 +65,7 @@
                         
                         <div class="alert alert-info alert-permanent text-center">
                             <h5><i class="fas fa-microphone me-2"></i>Students, call out your answers!</h5>
-                            <p class="mb-0">Presenter will reveal the answer when ready</p>
+                            <p class="mb-0"></p>
                         </div>
                         
                         <div class="d-grid gap-3 d-md-flex justify-content-center mt-4">
@@ -129,12 +133,69 @@
 <script>
 let currentHintIndex = 0;
 let currentRiddleNumber = 1;
+let timerInterval = null;
+let timeRemaining = 10;
+
 const hintsContainer = document.getElementById('hintsContainer');
 const totalHints = hintsContainer ? parseInt(hintsContainer.getAttribute('data-total-hints')) || 0 : 0;
+
+// Timer functions
+function startTimer() {
+    timeRemaining = 10;
+    updateTimerDisplay();
+    
+    timerInterval = setInterval(() => {
+        timeRemaining--;
+        updateTimerDisplay();
+        
+        if (timeRemaining <= 0) {
+            clearInterval(timerInterval);
+            autoRevealAnswer();
+        }
+    }, 1000);
+}
+
+function stopTimer() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+}
+
+function updateTimerDisplay() {
+    const timerElement = document.getElementById('timer');
+    timerElement.textContent = timeRemaining;
+    
+    // Change color based on time remaining
+    const timerCard = timerElement.closest('.card');
+    if (timeRemaining <= 3) {
+        timerCard.className = 'card bg-danger text-white text-center';
+    } else if (timeRemaining <= 5) {
+        timerCard.className = 'card bg-warning text-white text-center';
+    } else {
+        timerCard.className = 'card bg-success text-white text-center';
+    }
+}
+
+function autoRevealAnswer() {
+    const riddleCard = document.getElementById('riddleCard');
+    const answerArea = document.getElementById('answerArea');
+    
+    if (riddleCard.style.display !== 'none') {
+        riddleCard.style.display = 'none';
+        answerArea.style.display = 'block';
+    }
+}
+
+// Start timer when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    startTimer();
+});
 
 // Reveal Answer Button
 document.getElementById('revealBtn').addEventListener('click', function() {
     console.log('Reveal button clicked'); // Debug log
+    stopTimer();
     const riddleCard = document.getElementById('riddleCard');
     const answerArea = document.getElementById('answerArea');
     
@@ -204,6 +265,9 @@ async function loadNewRiddle() {
             document.getElementById('riddleCard').style.display = 'block';
             document.getElementById('answerArea').style.display = 'none';
             currentHintIndex = 0;
+            
+            // Restart timer
+            startTimer();
             
             // Update hints if available
             updateHintsSection(result.riddle.hints);
